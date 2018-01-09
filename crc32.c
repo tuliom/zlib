@@ -234,6 +234,13 @@ unsigned long ZEXPORT crc32_z(crc, buf, len)
 }
 
 /* ========================================================================= */
+#ifdef Z_POWER_OPT
+/* Rename function so resolver can use its symbol. The default version will be
+ * returned by the resolver if the host has no support for an optimized version.
+ */
+#define crc32_z crc32_z_default
+#endif /* Z_POWER_OPT */
+
 unsigned long ZEXPORT crc32(crc, buf, len)
     unsigned long crc;
     const unsigned char FAR *buf;
@@ -339,6 +346,11 @@ local unsigned long crc32_big(crc, buf, len)
 #endif /* BYFOUR */
 
 #define GF2_DIM 32      /* dimension of GF(2) vectors (length of CRC) */
+
+#ifdef Z_POWER_OPT
+#undef crc32_z
+#include "contrib/power/crc32_z_resolver.c"
+#endif /* Z_POWER_OPT */
 
 /* ========================================================================= */
 local unsigned long gf2_matrix_times(mat, vec)

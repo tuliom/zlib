@@ -75,11 +75,11 @@ PIC_OBJS = $(PIC_OBJC) $(PIC_OBJA)
 
 all: static shared
 
-static: adler32_test$(EXE) example$(EXE) minigzip$(EXE)
+static: adler32_test$(EXE) crc32_test$(EXE) example$(EXE) minigzip$(EXE)
 
-shared: adler32_testsh$(EXE) examplesh$(EXE) minigzipsh$(EXE)
+shared: adler32_testsh$(EXE) crc32_testsh$(EXE) examplesh$(EXE) minigzipsh$(EXE)
 
-all64: adler32_test64$(EXE) example64$(EXE) minigzip64$(EXE)
+all64: adler32_test64$(EXE) crc32_test64$(EXE) example64$(EXE) minigzip64$(EXE)
 
 check: test
 
@@ -87,7 +87,7 @@ test: all teststatic testshared
 
 teststatic: static
 	@TMPST=tmpst_$$; \
-	if echo hello world | ./minigzip | ./minigzip -d && ./example $$TMPST && ./adler32_test; then \
+	if echo hello world | ./minigzip | ./minigzip -d && ./example $$TMPST && ./adler32_test && ./crc32_test; then \
 	  echo '		*** zlib test OK ***'; \
 	else \
 	  echo '		*** zlib test FAILED ***'; false; \
@@ -100,7 +100,7 @@ testshared: shared
 	DYLD_LIBRARY_PATH=`pwd`:$(DYLD_LIBRARY_PATH) ; export DYLD_LIBRARY_PATH; \
 	SHLIB_PATH=`pwd`:$(SHLIB_PATH) ; export SHLIB_PATH; \
 	TMPSH=tmpsh_$$; \
-	if echo hello world | ./minigzipsh | ./minigzipsh -d && ./examplesh $$TMPSH && ./adler32_testsh; then \
+	if echo hello world | ./minigzipsh | ./minigzipsh -d && ./examplesh $$TMPSH && ./adler32_testsh && ./crc32_testsh; then \
 	  echo '		*** zlib shared test OK ***'; \
 	else \
 	  echo '		*** zlib shared test FAILED ***'; false; \
@@ -109,7 +109,7 @@ testshared: shared
 
 test64: all64
 	@TMP64=tmp64_$$; \
-	if echo hello world | ./minigzip64 | ./minigzip64 -d && ./example64 $$TMP64 && ./adler32_test64; then \
+	if echo hello world | ./minigzip64 | ./minigzip64 -d && ./example64 $$TMP64 && ./adler32_test64 && ./crc32_test64; then \
 	  echo '		*** zlib 64-bit test OK ***'; \
 	else \
 	  echo '		*** zlib 64-bit test FAILED ***'; false; \
@@ -146,6 +146,9 @@ match.lo: match.S
 adler32_test.o: $(SRCDIR)test/adler32_test.c $(SRCDIR)zlib.h zconf.h
 	$(CC) $(CFLAGS) $(ZINCOUT) -c -o $@ $(SRCDIR)test/adler32_test.c
 
+crc32_test.o: $(SRCDIR)test/crc32_test.c $(SRCDIR)zlib.h zconf.h
+	$(CC) $(CFLAGS) $(ZINCOUT) -c -o $@ $(SRCDIR)test/crc32_test.c
+
 example.o: $(SRCDIR)test/example.c $(SRCDIR)zlib.h zconf.h
 	$(CC) $(CFLAGS) $(ZINCOUT) -c -o $@ $(SRCDIR)test/example.c
 
@@ -154,6 +157,9 @@ minigzip.o: $(SRCDIR)test/minigzip.c $(SRCDIR)zlib.h zconf.h
 
 adler32_test64.o: $(SRCDIR)test/adler32_test.c $(SRCDIR)zlib.h zconf.h
 	$(CC) $(CFLAGS) $(ZINCOUT) -D_FILE_OFFSET_BITS=64 -c -o $@ $(SRCDIR)test/adler32_test.c
+
+crc32_test64.o: $(SRCDIR)test/crc32_test.c $(SRCDIR)zlib.h zconf.h
+	$(CC) $(CFLAGS) $(ZINCOUT) -D_FILE_OFFSET_BITS=64 -c -o $@ $(SRCDIR)test/crc32_test.c
 
 example64.o: $(SRCDIR)test/example.c $(SRCDIR)zlib.h zconf.h
 	$(CC) $(CFLAGS) $(ZINCOUT) -D_FILE_OFFSET_BITS=64 -c -o $@ $(SRCDIR)test/example.c
@@ -170,6 +176,9 @@ adler32_power8.o: $(SRCDIR)contrib/power/adler32_power8.c
 
 crc32.o: $(SRCDIR)crc32.c
 	$(CC) $(CFLAGS) $(ZINC) -c -o $@ $(SRCDIR)crc32.c
+
+crc32_z_power8.o: $(SRCDIR)contrib/power/crc32_z_power8.c
+	$(CC) $(CFLAGS) -mcpu=power8 $(ZINC) -c -o $@ $(SRCDIR)contrib/power/crc32_z_power8.c
 
 deflate.o: $(SRCDIR)deflate.c
 	$(CC) $(CFLAGS) $(ZINC) -c -o $@ $(SRCDIR)deflate.c
@@ -231,6 +240,11 @@ crc32.lo: $(SRCDIR)crc32.c
 	-@mkdir objs 2>/dev/null || test -d objs
 	$(CC) $(SFLAGS) $(ZINC) -DPIC -c -o objs/crc32.o $(SRCDIR)crc32.c
 	-@mv objs/crc32.o $@
+
+crc32_z_power8.lo: $(SRCDIR)contrib/power/crc32_z_power8.c
+	-@mkdir objs 2>/dev/null || test -d objs
+	$(CC) $(SFLAGS) -mcpu=power8 $(ZINC) -DPIC -c -o objs/crc32_z_power8.o $(SRCDIR)contrib/power/crc32_z_power8.c
+	-@mv objs/crc32_z_power8.o $@
 
 deflate.lo: $(SRCDIR)deflate.c
 	-@mkdir objs 2>/dev/null || test -d objs
@@ -318,6 +332,9 @@ placebo $(SHAREDLIBV): $(PIC_OBJS) libz.a
 adler32_test$(EXE): adler32_test.o $(STATICLIB)
 	$(CC) $(CFLAGS) -o $@ adler32_test.o $(TEST_LDFLAGS)
 
+crc32_test$(EXE): crc32_test.o $(STATICLIB)
+	$(CC) $(CFLAGS) -o $@ crc32_test.o $(TEST_LDFLAGS)
+
 example$(EXE): example.o $(STATICLIB)
 	$(CC) $(CFLAGS) -o $@ example.o $(TEST_LDFLAGS)
 
@@ -327,6 +344,9 @@ minigzip$(EXE): minigzip.o $(STATICLIB)
 adler32_testsh$(EXE): adler32_test.o $(SHAREDLIBV)
 	$(CC) $(CFLAGS) -o $@ adler32_test.o -L. $(SHAREDLIBV)
 
+crc32_testsh$(EXE): crc32_test.o $(SHAREDLIBV)
+	$(CC) $(CFLAGS) -o $@ crc32_test.o -L. $(SHAREDLIBV)
+
 examplesh$(EXE): example.o $(SHAREDLIBV)
 	$(CC) $(CFLAGS) -o $@ example.o -L. $(SHAREDLIBV)
 
@@ -335,6 +355,9 @@ minigzipsh$(EXE): minigzip.o $(SHAREDLIBV)
 
 adler32_test64$(EXE): adler32_test64.o $(STATICLIB)
 	$(CC) $(CFLAGS) -o $@ adler32_test64.o $(TEST_LDFLAGS)
+
+crc32_test64$(EXE): crc32_test64.o $(STATICLIB)
+	$(CC) $(CFLAGS) -o $@ crc32_test64.o $(TEST_LDFLAGS)
 
 example64$(EXE): example64.o $(STATICLIB)
 	$(CC) $(CFLAGS) -o $@ example64.o $(TEST_LDFLAGS)
@@ -405,8 +428,9 @@ zconf: $(SRCDIR)zconf.h.in
 mostlyclean: clean
 clean:
 	rm -f *.o *.lo *~ \
-	   adler32_test$(EXE) example$(EXE) minigzip$(EXE) adler32_testsh$(EXE) examplesh$(EXE) minigzipsh$(EXE) \
-	   adler32_test64$(EXE) example64$(EXE) minigzip64$(EXE) \
+	   adler32_test$(EXE) crc32_test$(EXE) example$(EXE) minigzip$(EXE) \
+     adler32_testsh$(EXE) crc32_testsh$(EXE) examplesh$(EXE) minigzipsh$(EXE) \
+	   adler32_test64$(EXE) crc32_test64$(EXE) example64$(EXE) minigzip64$(EXE) \
 	   infcover \
 	   libz.* foo.gz so_locations \
 	   _match.s maketree contrib/infback9/*.o
@@ -430,7 +454,7 @@ tags:
 
 adler32.o adler32_test.o zutil.o: $(SRCDIR)zutil.h $(SRCDIR)zlib.h zconf.h
 gzclose.o gzlib.o gzread.o gzwrite.o: $(SRCDIR)zlib.h zconf.h $(SRCDIR)gzguts.h
-compress.o example.o minigzip.o uncompr.o: $(SRCDIR)zlib.h zconf.h
+compress.o crc32_test.o example.o minigzip.o uncompr.o: $(SRCDIR)zlib.h zconf.h
 crc32.o: $(SRCDIR)zutil.h $(SRCDIR)zlib.h zconf.h $(SRCDIR)crc32.h
 deflate.o: $(SRCDIR)deflate.h $(SRCDIR)zutil.h $(SRCDIR)zlib.h zconf.h
 infback.o inflate.o: $(SRCDIR)zutil.h $(SRCDIR)zlib.h zconf.h $(SRCDIR)inftrees.h $(SRCDIR)inflate.h $(SRCDIR)inffast.h $(SRCDIR)inffixed.h
@@ -440,7 +464,7 @@ trees.o: $(SRCDIR)deflate.h $(SRCDIR)zutil.h $(SRCDIR)zlib.h zconf.h $(SRCDIR)tr
 
 adler32.lo adler32_test.lo zutil.lo: $(SRCDIR)zutil.h $(SRCDIR)zlib.h zconf.h
 gzclose.lo gzlib.lo gzread.lo gzwrite.lo: $(SRCDIR)zlib.h zconf.h $(SRCDIR)gzguts.h
-compress.lo example.lo minigzip.lo uncompr.lo: $(SRCDIR)zlib.h zconf.h
+compress.lo crc32_test.lo example.lo minigzip.lo uncompr.lo: $(SRCDIR)zlib.h zconf.h
 crc32.lo: $(SRCDIR)zutil.h $(SRCDIR)zlib.h zconf.h $(SRCDIR)crc32.h
 deflate.lo: $(SRCDIR)deflate.h $(SRCDIR)zutil.h $(SRCDIR)zlib.h zconf.h
 infback.lo inflate.lo: $(SRCDIR)zutil.h $(SRCDIR)zlib.h zconf.h $(SRCDIR)inftrees.h $(SRCDIR)inflate.h $(SRCDIR)inffast.h $(SRCDIR)inffixed.h

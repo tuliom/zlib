@@ -186,6 +186,7 @@ if(CMAKE_COMPILER_IS_GNUCC)
                 add_definitions(-DZ_POWER8)
                 set(ZLIB_POWER8
                     contrib/power/adler32_power8.c
+                    contrib/power/crc32_z_power8.c
                     contrib/power/slide_hash_power8.c)
 
                 set_source_files_properties(
@@ -307,6 +308,10 @@ add_test(adler32_test adler32_test)
 add_executable(example test/example.c)
 target_link_libraries(example zlib)
 add_test(example example)
+
+add_executable(crc32_test test/crc32_test.c)
+target_link_libraries(crc32_test zlib)
+add_test(crc32_test crc32_test)
 
 add_executable(minigzip test/minigzip.c)
 target_link_libraries(minigzip zlib)
