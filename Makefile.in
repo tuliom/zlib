@@ -177,6 +177,9 @@ deflate.o: $(SRCDIR)deflate.c
 longest_match_power9.o: $(SRCDIR)contrib/power/longest_match_power9.c
 	$(CC) $(CFLAGS) -mcpu=power9 $(ZINC) -c -o $@ $(SRCDIR)contrib/power/longest_match_power9.c
 
+slide_hash_power8.o: $(SRCDIR)contrib/power/slide_hash_power8.c
+	$(CC) $(CFLAGS) -mcpu=power8 $(ZINC) -c -o $@ $(SRCDIR)contrib/power/slide_hash_power8.c
+
 infback.o: $(SRCDIR)infback.c
 	$(CC) $(CFLAGS) $(ZINC) -c -o $@ $(SRCDIR)infback.c
 
@@ -238,6 +241,11 @@ longest_match_power9.lo: $(SRCDIR)contrib/power/longest_match_power9.c
 	-@mkdir objs 2>/dev/null || test -d objs
 	$(CC) $(SFLAGS) -mcpu=power9 $(ZINC) -DPIC -c -o objs/longest_match_power9.o $(SRCDIR)contrib/power/longest_match_power9.c
 	-@mv objs/longest_match_power9.o $@
+
+slide_hash_power8.lo: $(SRCDIR)contrib/power/slide_hash_power8.c
+	-@mkdir objs 2>/dev/null || test -d objs
+	$(CC) $(SFLAGS) -mcpu=power8 $(ZINC) -DPIC -c -o objs/slide_hash_power8.o $(SRCDIR)contrib/power/slide_hash_power8.c
+	-@mv objs/slide_hash_power8.o $@
 
 infback.lo: $(SRCDIR)infback.c
 	-@mkdir objs 2>/dev/null || test -d objs

@@ -8,3 +8,5 @@
 uLong _adler32_power8(uLong adler, const Bytef* buf, uInt len);
 
 uInt _longest_match_power9(deflate_state *s, IPos cur_match);
+
+void _slide_hash_power8(deflate_state *s);
