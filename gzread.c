@@ -185,10 +185,6 @@ local int gz_decomp(state)
         /* get more input for inflate() */
         if (strm->avail_in == 0 && gz_avail(state) == -1)
             return -1;
-        if (strm->avail_in == 0) {
-            gz_error(state, Z_BUF_ERROR, "unexpected end of file");
-            break;
-        }
 
         /* decompress and handle errors */
         ret = inflate(strm, Z_NO_FLUSH);
@@ -213,8 +209,10 @@ local int gz_decomp(state)
     state->x.next = strm->next_out - state->x.have;
 
     /* if the gzip stream completed successfully, look for another */
-    if (ret == Z_STREAM_END)
+    if (ret == Z_STREAM_END) {
         state->how = LOOK;
+        state->past = 1;
+    }
 
     /* good decompression */
     return 0;
@@ -327,11 +325,7 @@ local z_size_t gz_read(state, buf, len)
             state->x.have -= n;
         }
 
-        /* output buffer empty -- return if we're at the end of the input */
-        else if (state->eof && state->strm.avail_in == 0) {
-            state->past = 1;        /* tried to read past end */
-            break;
-        }
+        else if (state->past) break;
 
         /* need output data -- for small len or new stream load up our output
            buffer */
